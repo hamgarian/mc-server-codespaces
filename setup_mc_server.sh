@@ -17,6 +17,12 @@ sudo apt-get update
 echo -e "${GREEN}Installing Java...${NC}"
 sudo apt-get install -y openjdk-17-jdk
 
+# Install cloudflared
+echo -e "${GREEN}Installing cloudflared...${NC}"
+wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared-linux-amd64.deb
+rm cloudflared-linux-amd64.deb
+
 # Create server directory
 echo -e "${GREEN}Creating server directory...${NC}"
 mkdir -p ~/minecraft-server
@@ -31,13 +37,12 @@ echo -e "${GREEN}Accepting EULA...${NC}"
 echo "eula=true" > eula.txt
 
 # Create startup script
-echo -e "${GREEN}Creating startup script...${NC}"
+echo -e "${GREEN}Creating Minecraft startup script...${NC}"
 cat > start.sh << 'EOF'
 #!/bin/bash
 java -Xmx2G -Xms2G -jar server.jar nogui
 EOF
 
-# Make startup script executable
 chmod +x start.sh
 
 # Create basic server.properties
@@ -57,8 +62,18 @@ enable-command-block=false
 motd=Welcome to Minecraft Server!
 EOF
 
+# Create cloudflared tunnel startup script
+echo -e "${GREEN}Creating Cloudflared tunnel startup script...${NC}"
+cat > start_tunnel.sh << 'EOF'
+#!/bin/bash
+cloudflared tunnel --url tcp://localhost:25565
+EOF
+
+chmod +x start_tunnel.sh
+
 echo -e "${GREEN}Setup complete!${NC}"
-echo -e "${GREEN}To start the server, run:${NC}"
+echo -e "${GREEN}To start the Minecraft server, run:${NC}"
 echo "cd ~/minecraft-server && ./start.sh"
-echo -e "${GREEN}The server will be accessible on port 25565${NC}"
-echo -e "${GREEN}Make sure to open this port in your firewall if needed${NC}" 
+echo -e "${GREEN}To expose the server via Cloudflare Tunnel, run:${NC}"
+echo "cd ~/minecraft-server && ./start_tunnel.sh"
+echo -e "${GREEN}You will receive a Cloudflare hostname to share with players.${NC}"
